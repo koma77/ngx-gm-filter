@@ -19,6 +19,7 @@
 #define NGX_HTTP_GM_IMAGE_JPEG      1
 #define NGX_HTTP_GM_IMAGE_GIF       2
 #define NGX_HTTP_GM_IMAGE_PNG       3
+#define NGX_HTTP_GM_IMAGE_WEBP      4
 
 #define NGX_HTTP_IMAGE_BUFFERED  0x08
 
@@ -27,11 +28,13 @@
 #define NGX_HTTP_GM_RESIZE_OPTION 1
 #define NGX_HTTP_GM_ROTATE_OPTION 2
 #define NGX_HTTP_GM_CROP_OPTION   3
+#define NGX_HTTP_GM_FORMAT_OPTION 4
 
 /* comamnd type */
 #define NGX_HTTP_GM_NONE_CMD      0
 #define NGX_HTTP_GM_CONVERT_CMD   1
 #define NGX_HTTP_GM_COMPOSITE_CMD 2
+#define NGX_HTTP_GM_FORMAT_CMD    3
 
 #if !defined(MaxTextExtent)
 #  define MaxTextExtent  2053
@@ -60,6 +63,8 @@ typedef struct {
     ngx_http_complex_value_t    *rotate_degrees_cv;
     ngx_str_t                    crop_geometry;
     ngx_http_complex_value_t    *crop_geometry_cv;
+    ngx_str_t                    output_format;
+    ngx_http_complex_value_t    *output_format_cv;
 } ngx_http_gm_convert_option_t;
 
 typedef struct _ConvertOptions

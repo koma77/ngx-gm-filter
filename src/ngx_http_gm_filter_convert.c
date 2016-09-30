@@ -23,6 +23,9 @@ parse_convert_options(ngx_conf_t *cf, ngx_array_t *args,
     ngx_http_complex_value_t           rotate_cv;
     ngx_http_compile_complex_value_t   rotate_ccv;
 
+    ngx_http_complex_value_t           output_format_cv;
+    ngx_http_compile_complex_value_t   output_format_ccv;
+
     dd("entering");
 
     value = args->elts;
@@ -167,8 +170,47 @@ parse_convert_options(ngx_conf_t *cf, ngx_array_t *args,
 
                 *gm_option->crop_geometry_cv = crop_cv;
             }
+        }  else if (ngx_strncmp(value[i].data, "-format", value[i].len) == 0) {
+            gm_option = ngx_array_push(options);
+            if (gm_option == NULL) {
+                return NGX_ERROR;
+            }
 
+            gm_option->type = NGX_HTTP_GM_FORMAT_OPTION;
+            gm_option->output_format_cv = NULL;
 
+            i++;
+            if (i == end) {
+                return NGX_ERROR;
+            }
+
+            ngx_memzero(&output_format_ccv, sizeof(ngx_http_compile_complex_value_t));
+
+            output_format_ccv.cf = cf;
+            output_format_ccv.value = &value[i];
+            output_format_ccv.complex_value = &output_format_cv;
+
+            if (ngx_http_compile_complex_value(&output_format_ccv) != NGX_OK) {
+                return NGX_ERROR;
+            }
+
+            if (output_format_cv.lengths == NULL) {
+
+                if (value[i].len > MaxTextExtent - 1) {
+                    return NGX_ERROR;
+                }
+
+                gm_option->output_format = value[i];
+            } else {
+                gm_option->output_format_cv = ngx_palloc(cf->pool,
+                        sizeof(ngx_http_complex_value_t));
+
+                if (gm_option->output_format_cv == NULL) {
+                    return NGX_ERROR;
+                }
+
+                *gm_option->output_format_cv = output_format_cv;
+           }
         } else {
 
         }
@@ -203,6 +245,9 @@ convert_image(ngx_http_request_t *r, convert_options_t *option_info,
     u_char                            *rotate_degrees = NULL;
     ngx_int_t                          degrees;
     ngx_int_t                          degrees_suffix_len = 0;
+
+    u_char                            *output_format = NULL;
+
 
     dd("entering");
 
@@ -407,6 +452,43 @@ convert_image(ngx_http_request_t *r, convert_options_t *option_info,
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                               "gm filter:  command, unkonwn option");
             }
+        } else if (option->type == NGX_HTTP_GM_FORMAT_OPTION) {
+            dd("starting format");
+
+            output_format = ngx_http_gm_get_str_value(r,
+                    option->output_format_cv, &option->output_format);
+
+            if (output_format == NULL) {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                        "gm filter: format image, get format failed");
+                return  NGX_ERROR;
+            }
+
+            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "format image: \"%s\"", output_format);
+
+            GetExceptionInfo(&exception);
+
+            ngx_memcpy((*image)->magick, output_format, sizeof((*image)->magick));
+
+            if ((*image) == (Image *) NULL) {
+                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                              "gm filter: format image failed, "
+                              "format: \"%s\" severity: \"%O\" "
+                              "reason: \"%s\", description: \"%s\"",
+                              output_format, exception.severity,
+                              exception.reason, exception.description);
+
+                DestroyExceptionInfo(&exception);
+
+                return NGX_ERROR;
+            }
+
+            //DestroyImage(*image);
+            //*image = rotate_image;
+
+            DestroyExceptionInfo(&exception);
+
         } else {
                 ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
                               "gm filter: invalid crop geometry: \"%s\"", crop_geometry);

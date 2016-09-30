@@ -97,13 +97,12 @@ ngx_module_t  ngx_http_gm_module = {
 static ngx_http_output_header_filter_pt  ngx_http_next_header_filter;
 static ngx_http_output_body_filter_pt    ngx_http_next_body_filter;
 
-
 static ngx_str_t  ngx_http_gm_image_types[] = {
     ngx_string("image/jpeg"),
     ngx_string("image/gif"),
-    ngx_string("image/png")
+    ngx_string("image/png"),
+    ngx_string("image/webp")
 };
-
 
 static ngx_int_t
 ngx_http_gm_header_filter(ngx_http_request_t *r)
@@ -209,16 +208,15 @@ ngx_http_gm_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                                               NGX_HTTP_UNSUPPORTED_MEDIA_TYPE);
         }
 
-        /* override content type */
+        /* override content type 
 
         ct = &ngx_http_gm_image_types[ctx->type - 1];
         r->headers_out.content_type_len = ct->len;
         r->headers_out.content_type = *ct;
         r->headers_out.content_type_lowcase = NULL;
 
+        fall through */
         ctx->phase = NGX_HTTP_GM_IMAGE_READ;
-
-        /* fall through */
 
     case NGX_HTTP_GM_IMAGE_READ:
 
@@ -247,6 +245,23 @@ ngx_http_gm_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         }
 
         out.next = NULL;
+
+        /* by koma */
+        ctx->type = ngx_http_gm_image_test(r, &out);
+
+        if (ctx->type == NGX_HTTP_GM_IMAGE_NONE) {
+            return ngx_http_filter_finalize_request(r,
+                                              &ngx_http_gm_module,
+                                              NGX_HTTP_UNSUPPORTED_MEDIA_TYPE);
+        }
+
+        /* override content type */
+
+        ct = &ngx_http_gm_image_types[ctx->type - 1];
+        r->headers_out.content_type_len = ct->len;
+        r->headers_out.content_type = *ct;
+        r->headers_out.content_type_lowcase = NULL;
+
         ctx->phase = NGX_HTTP_GM_IMAGE_PASS;
 
         return ngx_http_gm_image_send(r, ctx, &out);
@@ -322,7 +337,13 @@ ngx_http_gm_image_test(ngx_http_request_t *r, ngx_chain_t *in)
         /* PNG */
 
         return NGX_HTTP_GM_IMAGE_PNG;
+    } else if (p[0] == 'R' && p[1] == 'I' && p[2] == 'F' && p[3] == 'F' && p[8] == 'W')
+    {
+        /* WEBP */
+
+        return NGX_HTTP_GM_IMAGE_WEBP;
     }
+
 
     return NGX_HTTP_GM_IMAGE_NONE;
 }

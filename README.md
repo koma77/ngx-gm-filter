@@ -6,7 +6,7 @@ ngx-gm-filter - Another image filter based GraphicsMagick.
 Status
 ======
 
-This module is under active development and is production ready.
+Testing 
 
 
 Version
@@ -27,8 +27,9 @@ server {
 
          set $resize 100x100>;
          set $rotate 180;
+         set $fmt webp;
 
-         gm convert -resize $resize -rotate $rotate;
+         gm convert -resize $resize -rotate $rotate -format $fmt;
          gm composite -gravity SouthEast -min-width 200 -min-height 200 wm.png;
 
          gm_image_quality 85;
@@ -61,7 +62,7 @@ gm_image_quality
 
 gm
 --------------
-**syntax:** *gm_[convert|composite]_ options*
+**syntax:** *gm_[convert|composite|format]_ options*
 
 **default:** *none*
 
@@ -82,7 +83,6 @@ Installation
 Install GraphicsMagick
 ------------
 
-Install GraphicsMagick with jpeg and png
 
     sudo apt-get install libjpeg-dev libpng-dev
     wget ftp://ftp.graphicsmagick.org/pub/GraphicsMagick/1.3/GraphicsMagick-1.3.16.tar.gz
