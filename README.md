@@ -6,7 +6,7 @@ ngx-gm-filter - Another image filter based GraphicsMagick.
 Status
 ======
 
-Testing 
+This module was successfully built and tested with nginx-1.11.4
 
 
 Version
@@ -84,13 +84,10 @@ Install GraphicsMagick
 ------------
 
 
-    sudo apt-get install libjpeg-dev libpng-dev
-    wget ftp://ftp.graphicsmagick.org/pub/GraphicsMagick/1.3/GraphicsMagick-1.3.16.tar.gz
-    tar xzvf GraphicsMagick-1.3.16.tar.gz
-    cd GraphicsMagick-1.3.16
-    ./configure --with-x=no --with-jpeg=yes --with-png=yes
-    make
-    sudo make install
+     sudo yum -y install GraphicsMagick-devel
+     rpm -qa|grep Magick
+     GraphicsMagick-devel-1.3.25-1.el7.x86_64
+     GraphicsMagick-1.3.25-1.el7.x86_64
 
 Install ngx-gm-filter
 ------------
